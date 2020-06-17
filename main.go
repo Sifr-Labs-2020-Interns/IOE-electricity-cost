@@ -2,9 +2,25 @@ package main
 
 import (
 	"unicode"
-
+	"math/rand"
+	"time"
+	"unsafe"
 	"github.com/go-macaron/binding"
 	"gopkg.in/macaron.v1"
+)
+
+/*	Taken from https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
+	Accessed 17/06/2020. Line 16 - 24 and function getRandomString has been taken from the source specified above.
+*/
+
+var src = rand.NewSource(time.Now().UnixNano())
+
+// This is the character set we will be using to build our key.
+const charSet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+const (
+	charIndexBits = 6                    // 6 bits to represent a character index (since we have 62 characters)
+	charIndexMask = 1<<charIndexBits - 1 // All 1-bits, as many as charIndexBits
+	charIndexMax  = 63 / charIndexBits   // Number of character indices fitting in 63 bits
 )
 
 //Post request parameters for route add user
@@ -48,11 +64,12 @@ func main() {
 */
 func isValid(key string) bool {
      
-     if len key < 500{
-          return false
-     }
-     
-     alphaFlag := false
+    if len key < 500{
+    	return false
+    }
+	
+	// Flags to check if the string that's read contains alphabets and letters.
+    alphaFlag := false
 	numFlag := false
 	for _, c := range key {
 
@@ -69,6 +86,38 @@ func isValid(key string) bool {
 	return false
 }
 
+// A function that return a random string containing alpha numeric characters
+func getRandomString(n int) string {
+
+	numFlag := false 		// A flag to keep track if the string we're creating has a number in it.
+	b := make([]byte, n)
+
+	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, src.Int63(), charIndexMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), charIndexMax
+		}
+		if index := int(cache & charIndexMask); index < len(charSet) {
+			b[i] = charSet[index]
+
+			// If the rune of this byte is a digit, set numFlag to true
+			if unicode.IsDigit(rune(b[i])) {
+				numFlag = true
+			}
+			i--
+		}
+		cache >>= charIndexBits
+		remain--
+	}
+
+	// In the event that the string we created doesn't have any number in it
+	if numFlag == false {
+		b[5] = charSet[1] // set the 10th character in the string to the number 1
+	}
+
+	return *(*string)(unsafe.Pointer(&b))
+}
+
 // TODO: add a new user
 func adduser(ctx *macaron.Context, newuser NewUser) {
 
@@ -79,6 +128,7 @@ func adduser(ctx *macaron.Context, newuser NewUser) {
 	Email_id := newuser.Email_Id
 	Admin_key := newuser.Admin_key
 
+	userKey = nil
 	/* Check if the admin key is valid
 	   |___ is valid
 	        |___ Generate key for user and insert data to the database and return JSON success with
@@ -87,7 +137,11 @@ func adduser(ctx *macaron.Context, newuser NewUser) {
 	        |___ Returns in json error admin key not valid
 
      */
-     
+	 
+	if isValid(Admin_key) {
+		userKey := getRandomString(500)
+		
+	}
 
 	// Remove this when you have your JSON return statementa
 	ctx.Resp.WriteHeader(200)
