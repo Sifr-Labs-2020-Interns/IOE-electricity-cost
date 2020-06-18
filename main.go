@@ -1,10 +1,11 @@
 package main
 
 import (
-	"unicode"
 	"math/rand"
 	"time"
+	"unicode"
 	"unsafe"
+
 	"github.com/go-macaron/binding"
 	"gopkg.in/macaron.v1"
 )
@@ -60,36 +61,46 @@ func main() {
 }
 
 /* A function that checks if the provided admin key is valid or not.
-   An admin key is valid only if it is alpha numeric and atleast 500 characters long
+   An admin key is valid only if it is alpha numeric (no special characters) and atleast 500 characters long.
+
+	Used https://stackoverflow.com/questions/38554353/how-to-check-if-a-string-only-contains-alphabetic-characters-in-go (17/06/2020)
+	for reference
 */
 func isValid(key string) bool {
-     
-    if len key < 500{
-    	return false
-    }
-	
-	// Flags to check if the string that's read contains alphabets and letters.
-    alphaFlag := false
+
+	if len(key) < 500 {
+		return false
+	}
+
+	// Flags to check if the string that's read contains alphabets, letters and no special characters.
+	alphaFlag := false
 	numFlag := false
+	specialCharFlag := false
 	for _, c := range key {
 
-		if unicode.IsLetter(c) {
-			alphaFlag = true
-		} else if unicode.IsDigit(c) {
+		if c >= 48 && c <= 57 {
 			numFlag = true
+		} else if (c >= 65 && c <= 90) || (c >= 97 && c <= 122) {
+			alphaFlag = true
+		} else {
+			specialCharFlag = true
 		}
 
-		if numFlag && alphaFlag {
-			return true
+		if specialCharFlag {
+			return false
 		}
 	}
-	return false
+	if !numFlag || !alphaFlag {
+		return false
+	}
+
+	return true
 }
 
 // A function that return a random string containing alpha numeric characters
 func getRandomString(n int) string {
 
-	numFlag := false 		// A flag to keep track if the string we're creating has a number in it.
+	numFlag := false // A flag to keep track if the string we're creating has a number in it.
 	b := make([]byte, n)
 
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
@@ -100,12 +111,18 @@ func getRandomString(n int) string {
 		if index := int(cache & charIndexMask); index < len(charSet) {
 			b[i] = charSet[index]
 
+		} else {
+			b[i] = charSet[index-2] // In case index gets a value of 63 or 62, decrement it by 2
+		}
+
+		if !numFlag { // If numFlag is false
 			// If the rune of this byte is a digit, set numFlag to true
 			if unicode.IsDigit(rune(b[i])) {
 				numFlag = true
 			}
-			i--
 		}
+
+		i--
 		cache >>= charIndexBits
 		remain--
 	}
@@ -136,11 +153,11 @@ func adduser(ctx *macaron.Context, newuser NewUser) {
 	   |___ not valid
 	        |___ Returns in json error admin key not valid
 
-     */
-	 
+	*/
+
 	if isValid(Admin_key) {
 		userKey := getRandomString(500)
-		
+
 	}
 
 	// Remove this when you have your JSON return statementa
