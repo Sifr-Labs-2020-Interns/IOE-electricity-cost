@@ -9,7 +9,7 @@ STARTS NOW()
 ON COMPLETION PRESERVE
 DO DELETE FROM transactions ;
 
-INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`,`KEY`) VALUES ("John Evans","john123@gmail.com","jevans","231");
+INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`KEY`) VALUES ("John Evans","john123@gmail.com","jevans","jeeee","231");
 INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`,`KEY`) VALUES ("Chris George","chrisg@gmail.com","chrisg1","452");
 
 /*TIME STAMP FORMAT yyyy-mm-dd hh:mm:ss*/
