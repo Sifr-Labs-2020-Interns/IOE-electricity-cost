@@ -9,6 +9,9 @@ agree to abide by the [code of conduct].
 ## Fork, then clone the repo:
 ```
     git clone git@github.com:your-username/IOE-electricity-cost.git
+
+    // Run the code
+    go run main.go <db_username> <db_password> <db>
 ```
 
 ## Push to your fork and submit a pull request.

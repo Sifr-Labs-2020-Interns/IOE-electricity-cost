@@ -7,13 +7,8 @@ import (
 	"time"
 	"unicode"
 	"unsafe"
-<<<<<<< HEAD
 	"os"
 	"./connection"
-=======
-
-	"github.com/Sifr-Labs-2020-Interns/IOE-electricity-cost/connection"
->>>>>>> bb175da139dc7cfb5fda58560889f7c8c665aa47
 	"golang.org/x/crypto/bcrypt"
 	"database/sql"
 
