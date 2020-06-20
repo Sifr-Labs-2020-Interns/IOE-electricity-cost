@@ -8,7 +8,7 @@ import (
 	"unicode"
 	"unsafe"
 
-	"github.com/wgb-10/IOE-electricity-cost/connection"
+	"github.com/Sifr-Labs-2020-Interns/IOE-electricity-cost/connection"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-macaron/binding"
