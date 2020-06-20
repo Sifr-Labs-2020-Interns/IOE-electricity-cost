@@ -1,9 +1,9 @@
 # Contributing
 
 We love pull requests from everyone. By participating in this project, you
-agree to abide by the thoughtbot [code of conduct].
+agree to abide by the [code of conduct].
 
-[code of conduct]: https://www.contributor-covenant.org/
+[code of conduct]: https://github.com/Sifr-Labs-2020-Interns/IOE-electricity-cost/blob/master/CODE_OF_CONDUCT.md
 
 
 Fork, then clone the repo:
