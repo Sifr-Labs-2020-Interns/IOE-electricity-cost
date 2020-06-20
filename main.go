@@ -7,13 +7,17 @@ import (
 	"time"
 	"unicode"
 	"unsafe"
-
-	"github.com/wgb-10/IOE-electricity-cost/connection"
+	"os"
+	"./connection"
 	"golang.org/x/crypto/bcrypt"
+	"database/sql"
 
 	"github.com/go-macaron/binding"
 	macaron "gopkg.in/macaron.v1"
 )
+
+//Connection object
+var conn *sql.DB
 
 /*	Taken from https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
 	Accessed 17/06/2020. Line 16 - 24 and function getRandomString has been taken from the source specified above.
@@ -29,6 +33,8 @@ const (
 	charIndexMax  = 63 / charIndexBits   // Number of character indices fitting in 63 bits
 )
 
+
+/*----------------------------------------- Struct for Post request ------------------------------------------- */
 //Post request parameters for route add user
 type NewUser struct {
 	Name      string `form:"name" binding:"Required"`
@@ -52,7 +58,32 @@ type AddTransaction struct {
 	Type     string `form: "Type" binding:"Required"`
 }
 
+/*-----------------------------------------------------------------------------------------------------------------*/
+
+
+
+
+/* ----------------------------------------------------------------------------------------
+------------------------------------ MAIN FUNCTION ---------------------------------------
+------------------------------------------------------------------------------------------*/
+
 func main() {
+
+	argsWithoutProg := os.Args[1:]
+
+  // Getting database information from arguments
+	db_username := argsWithoutProg[0]
+	db_password := argsWithoutProg[1]
+	db := argsWithoutProg[2]
+
+  // database connection
+	conn = connection.ConnectToDB(db_username, db_password, db)
+
+	if conn == nil {
+		panic("Database Connection Failed")
+	}
+
+
 
 	m := macaron.Classic()
 	// Public files
@@ -66,13 +97,26 @@ func main() {
 	m.Run()
 }
 
+/*-----------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------*/
+
+
+
+/*---------------------------------------------------------------------------------------------
+------------------------------------- HELPER FUNCTIONS ----------------------------------------
+---------------------------------------------------------------------------------------------*/
+
 /* A function that checks if the provided admin key is valid or not.
-   An admin key is valid only if it is alpha numeric (no special characters) and atleast 500 characters long.
+   An admin key is valid only if it is alpha numeric (no special characters) and atleast
+	 500 characters long.
 
 	Used https://stackoverflow.com/questions/38554353/how-to-check-if-a-string-only-contains-alphabetic-characters-in-go (17/06/2020)
 	for reference
+
+	NOT USED : To be used later
 */
-func isValid(key string) bool {
+ func isValid(key string) bool {
 
 	// if len(key) < 500 {
 	// 	return false
@@ -101,6 +145,35 @@ func isValid(key string) bool {
 	}
 
 	return true
+}
+
+/* Checks if the admin key is valid or not  */
+func isValidAdmin(key string) bool {
+
+  result, err := conn.Query("select count(admin_key) as admin from admins where admin_key=?",key)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if result.Next() {
+
+        var count int
+        // for each row, scan the result into our tag composite object
+        err = result.Scan(&count)
+
+        if err != nil {
+            panic(err.Error()) // proper error handling instead of panic in your app
+        }
+
+			  if count == 1{
+					return true;
+				}
+
+  }
+
+return false;
+
 }
 
 // A function that return a random string containing alpha numeric characters
@@ -141,8 +214,21 @@ func getRandomString(n int) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
+
+/*-----------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------*/
+
+
+
+/*---------------------------------------------------------------------------------------------
+------------------------------- FUNCTION TO HANDLE ROUTES  ------------------------------------
+---------------------------------------------------------------------------------------------*/
+
+
 // TODO: add a new user
 func adduser(ctx *macaron.Context, newuser NewUser) string {
+
 	// Get user from post request
 	name := newuser.Name
 	username := newuser.Username
@@ -163,13 +249,7 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 	mResponse := map[string]string{} // the JSON response in a map[string] string
 	jResponse := []byte{}            // the JSON response as a JSON object
 
-	db := connection.ConnectToDB("root", "", "ioe")
 
-	if db == nil {
-		panic("Database Connection Failed")
-	}
-
-	defer db.Close()
 
 	/* Check if the admin key is valid
 	   |___ is valid
@@ -179,8 +259,7 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 	        |___ Returns in json error admin key not valid
 
 	*/
-
-	if isValid(adminKey) {
+	if isValidAdmin(adminKey) {
 
 		userKey = getRandomString(500)
 
@@ -188,7 +267,7 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 		jResponse, _ = json.Marshal(mResponse)
 
 		// Taken from https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html (Accessed 19/06/2020)
-		query, err := db.Prepare("INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`KEY`) VALUES(?,?,?,?,?)")
+		query, err := conn.Prepare("INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`USER_KEY`) VALUES(?,?,?,?,?)")
 		if err != nil {
 			panic(err.Error())
 		}
@@ -219,14 +298,6 @@ func removeuser(ctx *macaron.Context, removeuser RemoveUser) string {
 	mResponse := map[string]string{} // the JSON response in a map[string] string
 	jResponse := []byte{}            // the JSON response as a JSON object
 
-	db := connection.ConnectToDB("root", "", "ioe")
-
-	if db == nil {
-		panic("Database Connection Failed")
-	}
-
-	defer db.Close()
-
 	/* Check if the admin key is valid
 	   |___ is valid
 	        |___ Remove user from database and return success
@@ -234,10 +305,10 @@ func removeuser(ctx *macaron.Context, removeuser RemoveUser) string {
 	        |___ Returns in json error admin key not valid
 	*/
 
-	if isValid(Admin_key) {
+	if isValidAdmin(Admin_key) {
 
 		// Taken from https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html (Accessed 19/06/2020)
-		query, err := db.Prepare("DELETE FROM users WHERE username = ? and email_id = ?")
+		query, err := conn.Prepare("DELETE FROM users WHERE username = ? and email_id = ?")
 		if err != nil {
 			panic(err.Error())
 		}
@@ -273,3 +344,8 @@ func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) {
 	ctx.Resp.WriteHeader(200)
 
 }
+
+
+/*-----------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------*/
