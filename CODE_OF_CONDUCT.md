@@ -3,7 +3,7 @@
 All projects (including mailing lists) follow The Lunduke Code of Conduct.
 
 Below is the complete text of the Code of Conduct.
-The Lunduke Code of Conduct
+(The Lunduke Code of Conduct)[https://lunduke.com/pages/codeofconduct/]
 
 Be Excellent to Each Other.
 ## FAQ
