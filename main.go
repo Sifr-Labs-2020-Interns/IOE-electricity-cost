@@ -1,16 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 	"unicode"
 	"unsafe"
-	"os"
+
 	"./connection"
 	"golang.org/x/crypto/bcrypt"
-	"database/sql"
 
 	"github.com/go-macaron/binding"
 	macaron "gopkg.in/macaron.v1"
@@ -33,7 +34,6 @@ const (
 	charIndexMax  = 63 / charIndexBits   // Number of character indices fitting in 63 bits
 )
 
-
 /*----------------------------------------- Struct for Post request ------------------------------------------- */
 //Post request parameters for route add user
 type NewUser struct {
@@ -53,15 +53,12 @@ type RemoveUser struct {
 
 //Post request parameters for route to Add transaction
 type AddTransaction struct {
-	User_key string `form: "admin_key" binding:"Required"`
+	User_key string `form: "user_key" binding:"Required"`
 	Watts    string `form: "Watts" binding:"Required"`
 	Type     string `form: "Type" binding:"Required"`
 }
 
 /*-----------------------------------------------------------------------------------------------------------------*/
-
-
-
 
 /* ----------------------------------------------------------------------------------------
 ------------------------------------ MAIN FUNCTION ---------------------------------------
@@ -71,19 +68,17 @@ func main() {
 
 	argsWithoutProg := os.Args[1:]
 
-  // Getting database information from arguments
+	// Getting database information from arguments
 	db_username := argsWithoutProg[0]
 	db_password := argsWithoutProg[1]
 	db := argsWithoutProg[2]
 
-  // database connection
+	// database connection
 	conn = connection.ConnectToDB(db_username, db_password, db)
 
 	if conn == nil {
 		panic("Database Connection Failed")
 	}
-
-
 
 	m := macaron.Classic()
 	// Public files
@@ -101,8 +96,6 @@ func main() {
 -------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------*/
 
-
-
 /*---------------------------------------------------------------------------------------------
 ------------------------------------- HELPER FUNCTIONS ----------------------------------------
 ---------------------------------------------------------------------------------------------*/
@@ -116,7 +109,7 @@ func main() {
 
 	NOT USED : To be used later
 */
- func isValid(key string) bool {
+func isValid(key string) bool {
 
 	// if len(key) < 500 {
 	// 	return false
@@ -150,7 +143,7 @@ func main() {
 /* Checks if the admin key is valid or not  */
 func isValidAdmin(key string) bool {
 
-  result, err := conn.Query("select count(admin_key) as admin from admins where admin_key=?",key)
+	result, err := conn.Query("select count(admin_key) as admin from admins where admin_key=?", key)
 
 	if err != nil {
 		panic(err.Error())
@@ -158,21 +151,50 @@ func isValidAdmin(key string) bool {
 
 	if result.Next() {
 
-        var count int
-        // for each row, scan the result into our tag composite object
-        err = result.Scan(&count)
+		var count int
+		// for each row, scan the result into our tag composite object
+		err = result.Scan(&count)
 
-        if err != nil {
-            panic(err.Error()) // proper error handling instead of panic in your app
-        }
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
 
-			  if count == 1{
-					return true;
-				}
+		if count == 1 {
+			return true
+		}
 
-  }
+	}
 
-return false;
+	return false
+
+}
+
+//Function to check if user key is valid
+func isValidUser(key string) bool {
+
+	result, err := conn.Query("select count(user_key) as user from users where user_key=?", key)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if result.Next() {
+
+		var count int
+		// for each row, scan the result into our tag composite object
+		err = result.Scan(&count)
+
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+
+		if count == 1 {
+			return true
+		}
+
+	}
+
+	return false
 
 }
 
@@ -214,17 +236,13 @@ func getRandomString(n int) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-
 /*-----------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------*/
 
-
-
 /*---------------------------------------------------------------------------------------------
 ------------------------------- FUNCTION TO HANDLE ROUTES  ------------------------------------
 ---------------------------------------------------------------------------------------------*/
-
 
 // TODO: add a new user
 func adduser(ctx *macaron.Context, newuser NewUser) string {
@@ -248,8 +266,6 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 	userKey := "null"                // the auto generated key
 	mResponse := map[string]string{} // the JSON response in a map[string] string
 	jResponse := []byte{}            // the JSON response as a JSON object
-
-
 
 	/* Check if the admin key is valid
 	   |___ is valid
@@ -326,12 +342,16 @@ func removeuser(ctx *macaron.Context, removeuser RemoveUser) string {
 }
 
 // TODO: Add transaction
-func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) {
+func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) string {
 
-	// Get information to add transaaction - UNCOMMENT WHEN USING THE VARIABLES
-	/* User_key := addtransaction.User_key
+	// Get information to add transaaction
+
+	User_key := addtransaction.User_key
 	Watts := addtransaction.Watts
-	Type := addtransaction.Type */
+	Type := addtransaction.Type
+
+	mResponse := map[string]string{}
+	jResponse := []byte{}
 
 	/* Check if the user key is valid
 	   |___ is valid
@@ -340,11 +360,32 @@ func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) {
 	        |___ Returns in json error user key not valid
 	*/
 
-	// Remove this when you have your JSON return statementa
-	ctx.Resp.WriteHeader(200)
+	if isValid(User_key) {
+
+		query, err := conn.Prepare("INSERT INTO transactions (`USER_ID`, `WATT/SECOND`,`TYPE`) SELECT user_id,?,? FROM users WHERE user_key=?")
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// query.Exec(User_key, Watts, Type)
+
+		query.Exec(Watts, Type, User_key)
+
+		fmt.Println("Transaction done")
+		if err != nil {
+			panic(err.Error())
+		}
+
+	} else {
+
+		mResponse = map[string]string{"Error": "User key does not exist"}
+		jResponse, _ = json.Marshal(mResponse)
+	}
+
+	return string(jResponse)
 
 }
-
 
 /*-----------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
