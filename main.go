@@ -83,9 +83,8 @@ func main() {
 	// Public files
 	m.Use(macaron.Static("public"))
 
-	var newuser NewUser
 	// All routes
-	m.Post("/adduser", binding.Bind(newuser), adduser)
+	m.Post("/adduser", binding.Bind(NewUser{}), adduser)
 	m.Post("/removeuser", binding.Bind(RemoveUser{}), removeuser)
 	m.Post("/addtransaction", binding.Bind(AddTransaction{}), addtransaction)
 
