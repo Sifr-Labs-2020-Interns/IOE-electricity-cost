@@ -83,8 +83,9 @@ func main() {
 	// Public files
 	m.Use(macaron.Static("public"))
 
+	var newuser NewUser
 	// All routes
-	m.Post("/adduser", binding.Bind(NewUser{}), adduser)
+	m.Post("/adduser", binding.Bind(newuser), adduser)
 	m.Post("/removeuser", binding.Bind(RemoveUser{}), removeuser)
 	m.Post("/addtransaction", binding.Bind(AddTransaction{}), addtransaction)
 
@@ -146,9 +147,9 @@ func isValidKey(key string) bool {
 }
 
 /* Checks if the value of a field exists in the database based on the query string */
-func isValid(field string, query string) bool {
+func isValid(conn *sql.DB, value string, query string) bool {
 
-	result, err := conn.Query(query, field)
+	result, err := conn.Query(query, value)
 
 	if err != nil {
 		panic(err.Error())
@@ -249,12 +250,12 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 	        |___ Returns in json error admin key not valid
 
 	*/
-	if isValid(adminKey, "select count(admin_key) as admin from admins where admin_key=?") {
+	if isValid(conn, adminKey, "select count(admin_key) as admin from admins where admin_key=?") {
 
 		userKey = getRandomString(500)
 
 		// Checking if the user exists
-		if isValid(username, "select count(user_key) as users from users where user_key=?") {
+		if isValid(conn, username, "select count(username) as users from users where username=?") {
 
 			result = convertToJSON(map[string]string{"Error": "Username " + username + " is already taken"})
 			return (string(result))
@@ -297,7 +298,7 @@ func removeuser(ctx *macaron.Context, removeuser RemoveUser) string {
 	        |___ Returns in json error admin key not valid
 	*/
 
-	if isValid(Admin_key, "select count(admin_key) as admin from admins where admin_key=?") {
+	if isValid(conn, Admin_key, "select count(admin_key) as admin from admins where admin_key=?") {
 
 		// Taken from https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html (Accessed 19/06/2020)
 		query, err := conn.Prepare("DELETE FROM users WHERE username = ?")

@@ -9,24 +9,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func init() {
-	// we register an sql driver named "txdb"
-	txdb.Register("txdb", "mysql", "root@/test")
-
-	// dsn serves as an unique identifier for connection pool
-	db, err := sql.Open("txdb", "identifier")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer db.Close()
-
-	if _, err := db.Exec("INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`USER_KEY`) VALUES(?,?,?,?,?)", "Jack Black", "jb101@yahoo.com", "jb101", "password", "jb101"); err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println("Success")
-	}
-}
-
 func TestConvertToJSON(t *testing.T) {
 	tables := []struct {
 		mappedMsg map[string]string
@@ -44,6 +26,25 @@ func TestConvertToJSON(t *testing.T) {
 
 }
 
-// func TestIsValidAdmin(t *testing.T) {
+func TestIsValidAdmin(t *testing.T) {
+	// we register an sql driver named "txdb"
+	txdb.Register("txdb", "mysql", "root@/test")
 
-// }
+	// dsn serves as an unique identifier for connection pool
+	db, err := sql.Open("txdb", "identifier")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer db.Close()
+
+	if _, err := db.Exec("INSERT INTO admins (`ADMIN_NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`ADMIN_KEY`) VALUES(?,?,?,?,?)", "Jack Black", "jb12@gmail.com", "jbl", "jackbl", "jbl94"); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("Added an admin")
+	}
+	result := isValid(db, "jbl94", "select count(admin_key) as admin from admins where admin_key=?")
+	if result == false {
+		t.Errorf("Result was incorrect, got: %t, want: %t", result, true)
+	}
+
+}
