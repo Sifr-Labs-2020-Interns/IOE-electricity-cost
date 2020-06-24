@@ -1,16 +1,18 @@
 USE ioe;
 
+/*
 SET @@time_zone='SYSTEM';
 
-/* this will delete transactions every 1 second */
+/* this will delete transactions every 1 second 
 CREATE EVENT delete_transaction_every_second
 ON SCHEDULE EVERY 1 SECOND
 STARTS NOW()
 ON COMPLETION PRESERVE
 DO DELETE FROM transactions ;
+*/
 
-INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`KEY`) VALUES ("John Evans","john123@gmail.com","jevans","jeeee","231");
-INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`,`KEY`) VALUES ("Chris George","chrisg@gmail.com","chrisg1","452");
+INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`USER_KEY`) VALUES ("John Evans","john123@gmail.com","jevans","jeeee","231");
+INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`USER_KEY`) VALUES ("Chris George","chrisg@gmail.com","chrisg1","gada","452");
 
 /*TIME STAMP FORMAT yyyy-mm-dd hh:mm:ss*/
 INSERT INTO transactions (`USER_ID`,`WATT/SECOND`, `TYPE`,`TIMESTAMP`) VALUES (1,123.25,"GIVE",'2020-06-08 06:08:57');
