@@ -10,7 +10,15 @@ import (
 	"unicode"
 	"unsafe"
 
+	"github.com/wgb-10/IOE-electricity-cost/connection"
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/go-macaron/binding"
+	macaron "gopkg.in/macaron.v1"
+)
+
 //Connection object
+var conn *sql.DB
 
 /*	Taken from https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
 	Accessed 17/06/2020. Line 16 - 24 and function getRandomString has been taken from the source specified above.
@@ -287,7 +295,7 @@ func removeuser(removeuser RemoveUser) string {
 
 	// Get user information from post request - UNCOMMENT WHEN USING THE VARIABLES
 	Username := removeuser.Username
-	Admin_key := removeuser.AdminKey
+	AdminKey := removeuser.AdminKey
 
 	result := "null"
 
@@ -298,7 +306,7 @@ func removeuser(removeuser RemoveUser) string {
 	        |___ Returns in json error admin key not valid
 	*/
 
-	if isValid(Admin_key, "select count(admin_key) as admin from admins where admin_key=?") {
+	if isValid(AdminKey, "select count(admin_key) as admin from admins where admin_key=?") {
 
 		// Taken from https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html (Accessed 19/06/2020)
 		query, err := conn.Prepare("DELETE FROM users WHERE username = ?")
@@ -322,7 +330,7 @@ func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) string 
 
 	// Get information to add transaaction
 
-	User_key := addtransaction.User_key
+	UserKey := addtransaction.UserKey
 	Watts := addtransaction.Watts
 	Type := addtransaction.Type
 
@@ -336,7 +344,7 @@ func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) string 
 	        |___ Returns in json error user key not valid
 	*/
 
-	if isValid(User_key) {
+	if isValid(UserKey, "select count(user_key) as users from users where user_key=?") {
 
 		query, err := conn.Prepare("INSERT INTO transactions (`USER_ID`, `WATT/SECOND`,`TYPE`) SELECT user_id,?,? FROM users WHERE user_key=?")
 
@@ -346,7 +354,7 @@ func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) string 
 
 		// query.Exec(User_key, Watts, Type)
 
-		query.Exec(Watts, Type, User_key)
+		query.Exec(Watts, Type, UserKey)
 
 		fmt.Println("Transaction done")
 		if err != nil {
