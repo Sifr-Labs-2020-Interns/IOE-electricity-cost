@@ -10,15 +10,7 @@ import (
 	"unicode"
 	"unsafe"
 
-	"github.com/wgb-10/IOE-electricity-cost/connection"
-	"golang.org/x/crypto/bcrypt"
-
-	"github.com/go-macaron/binding"
-	macaron "gopkg.in/macaron.v1"
-)
-
 //Connection object
-var conn *sql.DB
 
 /*	Taken from https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
 	Accessed 17/06/2020. Line 16 - 24 and function getRandomString has been taken from the source specified above.
@@ -326,12 +318,16 @@ func removeuser(removeuser RemoveUser) string {
 }
 
 // TODO: Add transaction
-func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) {
+func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) string {
 
-	// Get information to add transaaction - UNCOMMENT WHEN USING THE VARIABLES
-	/* User_key := addtransaction.User_key
+	// Get information to add transaaction
+
+	User_key := addtransaction.User_key
 	Watts := addtransaction.Watts
-	Type := addtransaction.Type */
+	Type := addtransaction.Type
+
+	mResponse := map[string]string{}
+	jResponse := []byte{}
 
 	/* Check if the user key is valid
 	   |___ is valid
@@ -340,8 +336,30 @@ func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) {
 	        |___ Returns in json error user key not valid
 	*/
 
-	// Remove this when you have your JSON return statementa
-	ctx.Resp.WriteHeader(200)
+	if isValid(User_key) {
+
+		query, err := conn.Prepare("INSERT INTO transactions (`USER_ID`, `WATT/SECOND`,`TYPE`) SELECT user_id,?,? FROM users WHERE user_key=?")
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// query.Exec(User_key, Watts, Type)
+
+		query.Exec(Watts, Type, User_key)
+
+		fmt.Println("Transaction done")
+		if err != nil {
+			panic(err.Error())
+		}
+
+	} else {
+
+		mResponse = map[string]string{"Error": "User key does not exist"}
+		jResponse, _ = json.Marshal(mResponse)
+	}
+
+	return string(jResponse)
 
 }
 
