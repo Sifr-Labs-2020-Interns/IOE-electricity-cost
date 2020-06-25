@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -35,26 +36,32 @@ const (
 
 /*----------------------------------------- Struct for Post request ------------------------------------------- */
 //Post request parameters for route add user
+
+//NewUser is a type that models a user to be added to the database
 type NewUser struct {
-	Name      string `form:"name" binding:"Required"`
-	Username  string `form: "username" binding:"Required"`
-	Password  string `form: "password" binding:"Required"`
-	Email_ID  string `form: "email_id" binding:"Required"`
-	Admin_key string `form: "admin_key" binding:"Required"`
+	Name     string `form:"name" binding:"Required"`
+	Username string `form: "username" binding:"Required"`
+	Password string `form: "password" binding:"Required"`
+	EmailID  string `form: "email_id" binding:"Required"`
+	AdminKey string `form: "admin_key" binding:"Required"`
 }
 
 //Post request parameters for route to remove user
+
+//RemoveUser is models a user to be removed from the database
 type RemoveUser struct {
-	Username  string `form: "username" binding:"Required"`
-	Email_Id  string `form: "email_id" binding:"Required"`
-	Admin_key string `form: "admin_key" binding:"Required"`
+	Username string `form: "username" binding:"Required"`
+	EmailID  string `form: "email_id" binding:"Required"`
+	AdminKey string `form: "admin_key" binding:"Required"`
 }
 
 //Post request parameters for route to Add transaction
+
+//AddTransaction models a transaction that is added to the database
 type AddTransaction struct {
-	User_key string `form: "admin_key" binding:"Required"`
-	Watts    string `form: "Watts" binding:"Required"`
-	Type     string `form: "Type" binding:"Required"`
+	UserKey string `form: "admin_key" binding:"Required"`
+	Watts   string `form: "Watts" binding:"Required"`
+	Type    string `form: "Type" binding:"Required"`
 }
 
 /*-----------------------------------------------------------------------------------------------------------------*/
@@ -68,12 +75,12 @@ func main() {
 	argsWithoutProg := os.Args[1:]
 
 	// Getting database information from arguments
-	db_username := argsWithoutProg[0]
-	db_password := argsWithoutProg[1]
+	dbUsername := argsWithoutProg[0]
+	dbPassword := argsWithoutProg[1]
 	db := argsWithoutProg[2]
 
 	// database connection
-	conn = connection.ConnectToDB(db_username, db_password, db)
+	conn = connection.ConnectToDB(dbUsername, dbPassword, db)
 
 	if conn == nil {
 		panic("Database Connection Failed")
@@ -116,9 +123,9 @@ func convertToJSON(data map[string]string) string {
 */
 func isValidKey(key string) bool {
 
-	// if len(key) < 500 {
-	// 	return false
-	// }
+	if len(key) < 500 {
+		return false
+	}
 
 	// Flags to check if the string that's read contains alphabets, letters and no special characters.
 	alphaFlag := false
@@ -221,14 +228,14 @@ func getRandomString(n int) string {
 ---------------------------------------------------------------------------------------------*/
 
 // TODO: add a new user
-func adduser(ctx *macaron.Context, newuser NewUser) string {
+func adduser(newuser NewUser) string {
 
 	// Get user from post request
 	name := newuser.Name
 	username := newuser.Username
 	password := newuser.Password
-	email_id := newuser.Email_ID
-	adminKey := newuser.Admin_key
+	emailID := newuser.EmailID
+	adminKey := newuser.AdminKey
 
 	//Hashing the password
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -241,6 +248,8 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 
 	userKey := "null" // the auto generated key
 	result := "null"
+	fmt.Println("Email ID is" + emailID)
+
 	/* Check if the admin key is valid
 	   |___ is valid
 	        |___ Generate key for user and insert data to the database and return JSON success with
@@ -267,7 +276,7 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 		if err != nil {
 			panic(err.Error())
 		}
-		query.Exec(name, email_id, username, password, userKey)
+		query.Exec(name, emailID, username, password, userKey)
 
 		if err != nil {
 			panic(err.Error())
@@ -282,11 +291,11 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 }
 
 // TODO: remove user
-func removeuser(ctx *macaron.Context, removeuser RemoveUser) string {
+func removeuser(removeuser RemoveUser) string {
 
 	// Get user information from post request - UNCOMMENT WHEN USING THE VARIABLES
 	Username := removeuser.Username
-	Admin_key := removeuser.Admin_key
+	Admin_key := removeuser.AdminKey
 
 	result := "null"
 

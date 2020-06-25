@@ -8,9 +8,10 @@ import (
 )
 
 func init() {
-	// we register an sql driver named "txdb"
-	//txdb.Register("txdb", "mysql", "root@/test")
+
+	// Connecting to the test database
 	conn = connection.ConnectToDB("root", "", "test")
+
 }
 
 func TestConvertToJSON(t *testing.T) {
@@ -22,57 +23,72 @@ func TestConvertToJSON(t *testing.T) {
 		{map[string]string{"Name": "Tony", "Age": "30"}, `{"Age":"30","Name":"Tony"}`},
 	}
 	for _, table := range tables {
-		result := convertToJSON(table.mappedMsg)
-		if result != table.jsonMsg {
-			t.Errorf("Result was incorrect, got: %s, want: %s.", result, table.jsonMsg)
+		if result := convertToJSON(table.mappedMsg); result != table.jsonMsg {
+			t.Errorf("result was incorrect, got: %s, want: %s.", result, table.jsonMsg)
 		}
 	}
 
 }
 
+func TestIsValidKey(t *testing.T) {
+	key := "ETU3rSTYCnqM51lsgiZMXI5Y4B4sDNxBodsnaImKBgesNcbpf09JbwnFKurCL5zObqihGyDJEJrLXZxPXjvYM1Pe1psqbh4jpHADxjSZYZ8Pey2loQDByDBzdtYyDp8skkD7c3M5tVwWGSzu05zoJxOA8scQtwbgryFhErrGHKTAvUQ3hbRgnOEaj191mP4A7swVOQKqorU8OBTrlmj6W49IPzd0Cp85ZJKtXb4H1HVzR9v39wLFzBeaRGjOQ0EKIGdy3iiKzzLZeIKzy58PjgK2UF8aDw3YaRU9TJILy4q93xNBQJA9xh59HZ3mqJGUfyEUOC15sqEimxPflwrurewHBrc0GO1AjBYwYw4fLOmzgXUXrPBjCsxpTtHkDXzIdf9FqSG4q5BqmdqsDVU5FGcllHvKmhb9Gm2U9DHRniNJ9bLwLMNX1DpIQxBrgrT1Bnzrn1o80fDOqZwSc8KjRWzQpqxxbchlEQCqH8fz12KABRSPzs0k"
+	if result := isValidKey(key); result == false {
+		t.Errorf("result was incorrect, got %t want %t", result, true)
+	}
+}
+
+func TestGetRandomString(t *testing.T) {
+	key := getRandomString(500)
+	if result := isValidKey(key); result == false {
+		t.Errorf("result was incorrect, got %t want %t", result, true)
+	}
+}
+
 func TestIsValidAdmin(t *testing.T) {
 
-	// making the conn variable point to the driver returned by sql open here
-	//conn, err := sql.Open("txdb", "identifier")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	defer conn.Close()
-
-	// if _, err := conn.Exec("INSERT INTO admins (`ADMIN_NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`ADMIN_KEY`) VALUES(?,?,?,?,?)", "Jack Black", "jb12@gmail.com", "jbl", "jackbl", "jbl94"); err != nil {
-	// 	fmt.Println(err)
-	// } else {
-	// 	fmt.Println("Added an admin")
-	// }
-	result := isValid("jbl94", "select count(admin_key) as admin from admins where admin_key=?")
+	adminKey := "ETU3rSTYCnqM51lsgiZMXI5Y4B4sDNxBodsnaImKBgesNcbpf09JbwnFKurCL5zObqihGyDJEJrLXZxPXjvYM1Pe1psqbh4jpHADxjSZYZ8Pey2loQDByDBzdtYyDp8skkD7c3M5tVwWGSzu05zoJxOA8scQtwbgryFhErrGHKTAvUQ3hbRgnOEaj191mP4A7swVOQKqorU8OBTrlmj6W49IPzd0Cp85ZJKtXb4H1HVzR9v39wLFzBeaRGjOQ0EKIGdy3iiKzzLZeIKzy58PjgK2UF8aDw3YaRU9TJILy4q93xNBQJA9xh59HZ3mqJGUfyEUOC15sqEimxPflwrurewHBrc0GO1AjBYwYw4fLOmzgXUXrPBjCsxpTtHkDXzIdf9FqSG4q5BqmdqsDVU5FGcllHvKmhb9Gm2U9DHRniNJ9bLwLMNX1DpIQxBrgrT1Bnzrn1o80fDOqZwSc8KjRWzQpqxxbchlEQCqH8fz12KABRSPzs0k"
+	result := isValid(adminKey, "select count(admin_key) as admin from admins where admin_key=?")
 	if result == false {
-		t.Errorf("Result was incorrect, got: %t, want: %t", result, true)
+		t.Errorf("result was incorrect. The given admin key was not found in the database. isValid returned: %t, want: %t", result, true)
 	}
 
 }
 
-/*func TestAddUserToDB(t *testing.T) {
-	// making the conn variable point to the driver returned by sql open here
-	conn, err := sql.Open("txdb", "identifier")
-	if err != nil {
-		fmt.Println(err)
+func TestIsValidUser(t *testing.T) {
+
+	result := isValid("chrisg1", "select count(username) as users from users where username=?")
+	if result == false {
+		t.Errorf("Result was incorrect. The given username was not found in the database. isValid returned: %t, want: %t", result, true)
 	}
-	defer conn.Close()
+}
+
+func TestAddUser(t *testing.T) {
 
 	var newUser NewUser
 
-	newUser.Admin_key = "jbl94"
-	newUser.Email_ID = "blah@yahoo.com"
+	newUser.Admin_key = "ETU3rSTYCnqM51lsgiZMXI5Y4B4sDNxBodsnaImKBgesNcbpf09JbwnFKurCL5zObqihGyDJEJrLXZxPXjvYM1Pe1psqbh4jpHADxjSZYZ8Pey2loQDByDBzdtYyDp8skkD7c3M5tVwWGSzu05zoJxOA8scQtwbgryFhErrGHKTAvUQ3hbRgnOEaj191mP4A7swVOQKqorU8OBTrlmj6W49IPzd0Cp85ZJKtXb4H1HVzR9v39wLFzBeaRGjOQ0EKIGdy3iiKzzLZeIKzy58PjgK2UF8aDw3YaRU9TJILy4q93xNBQJA9xh59HZ3mqJGUfyEUOC15sqEimxPflwrurewHBrc0GO1AjBYwYw4fLOmzgXUXrPBjCsxpTtHkDXzIdf9FqSG4q5BqmdqsDVU5FGcllHvKmhb9Gm2U9DHRniNJ9bLwLMNX1DpIQxBrgrT1Bnzrn1o80fDOqZwSc8KjRWzQpqxxbchlEQCqH8fz12KABRSPzs0k"
+	newUser.Email_ID = "bb10@yahoo.com"
 	newUser.Name = "Bruce Banner"
 	newUser.Username = "hulk"
-	newUser.Password = "punny god"
+	newUser.Password = "hulk_smash"
 
-	userKey := "Abc123"
+	adduser(newUser)
 
-	_, errString := addUserToDB(conn, newUser, userKey)
+	if result := isValid("hulk", "select count(username) as users from users where username=?"); result == false {
+		t.Errorf("%s could not be added to the database", newUser.Username)
+	}
 
-	if errString != "null" {
-		t.Errorf("Could not add %s to the database", newUser.Username)
+}
+
+func TestRemoveUser(t *testing.T) {
+	var userToRemove RemoveUser
+
+	userToRemove.Admin_key = "ETU3rSTYCnqM51lsgiZMXI5Y4B4sDNxBodsnaImKBgesNcbpf09JbwnFKurCL5zObqihGyDJEJrLXZxPXjvYM1Pe1psqbh4jpHADxjSZYZ8Pey2loQDByDBzdtYyDp8skkD7c3M5tVwWGSzu05zoJxOA8scQtwbgryFhErrGHKTAvUQ3hbRgnOEaj191mP4A7swVOQKqorU8OBTrlmj6W49IPzd0Cp85ZJKtXb4H1HVzR9v39wLFzBeaRGjOQ0EKIGdy3iiKzzLZeIKzy58PjgK2UF8aDw3YaRU9TJILy4q93xNBQJA9xh59HZ3mqJGUfyEUOC15sqEimxPflwrurewHBrc0GO1AjBYwYw4fLOmzgXUXrPBjCsxpTtHkDXzIdf9FqSG4q5BqmdqsDVU5FGcllHvKmhb9Gm2U9DHRniNJ9bLwLMNX1DpIQxBrgrT1Bnzrn1o80fDOqZwSc8KjRWzQpqxxbchlEQCqH8fz12KABRSPzs0k"
+	userToRemove.Username = "hulk"
+
+	removeuser(userToRemove)
+
+	if result := isValid("hulk", "select count(username) as users from users where username=?"); result == true {
+		t.Errorf("%s is still the database", userToRemove.Username)
 	}
 }
-*/
