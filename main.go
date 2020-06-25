@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unsafe"
 
-	"github.com/wgb-10/IOE-electricity-cost/connection"
+	"./connection"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-macaron/binding"
