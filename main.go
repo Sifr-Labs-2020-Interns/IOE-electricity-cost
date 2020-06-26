@@ -39,10 +39,10 @@ const (
 
 //NewUser is a type that models a user to be added to the database
 type NewUser struct {
-	Name     string `form:"name" binding:"Required"`
+	Name     string `form: "name" binding:"Required"`
 	Username string `form: "username" binding:"Required"`
 	Password string `form: "password" binding:"Required"`
-	EmailID  string `form: "email_id" binding:"Required"`
+	EmailID  string `form:"email_id" binding:"Required"`
 	AdminKey string `form: "admin_key" binding:"Required"`
 }
 
@@ -51,7 +51,7 @@ type NewUser struct {
 //RemoveUser is models a user to be removed from the database
 type RemoveUser struct {
 	Username string `form: "username" binding:"Required"`
-	EmailID  string `form: "email_id" binding:"Required"`
+	EmailID  string `form:"email_id" binding:"Required"`
 	AdminKey string `form: "admin_key" binding:"Required"`
 }
 
@@ -248,7 +248,6 @@ func adduser(newuser NewUser) string {
 
 	userKey := "null" // the auto generated key
 	result := "null"
-	fmt.Println("Email ID is" + emailID)
 
 	/* Check if the admin key is valid
 	   |___ is valid
