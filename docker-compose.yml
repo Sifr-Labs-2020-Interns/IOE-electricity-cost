@@ -26,6 +26,7 @@ version: '3'
 # environment defines the credentials of the database.
 
 
+
 services: 
   db:
     #uses the base image as the official image from docker repos
@@ -50,7 +51,7 @@ services:
     volumes: 
       - ./:/go/src/IOE-electricity-cost
     ports:
-      - 5001:80
+      - 4000:4000
     depends_on: 
       - db
 

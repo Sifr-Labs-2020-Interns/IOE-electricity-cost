@@ -8,6 +8,8 @@ RUN go get -d -v ./...
 RUN go install -v ./...
 RUN go build -o main .
 
-EXPOSE 80
+EXPOSE 4000
 
-CMD ["IOE-electricity-cost"]
+
+CMD ["IOE-electricity-cost", "user", "password", "ioe"]
+
