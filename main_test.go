@@ -3,14 +3,14 @@ package main
 import (
 	"testing"
 
-	"github.com/Sifr-Labs-2020-Interns/IOE-electricity-cost/connection"
+	"IOE-electricity-cost/connection"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func init() {
 
 	// Connecting to the test database
-	conn = connection.ConnectToDB("root", "", "test")
+	conn = connection.ConnectToDB("IOE", "IOE", "ioe")
 
 }
 

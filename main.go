@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unsafe"
 
-	"github.com/Sifr-Labs-2020-Interns/IOE-electricity-cost/connection"
+	"IOE-electricity-cost/connection"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-macaron/binding"
@@ -96,7 +96,8 @@ func main() {
 	m.Post("/addtransaction", binding.Bind(AddTransaction{}), addtransaction)
 
 	m.Run()
-}
+        
+       }
 
 /*-----------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
