@@ -11,5 +11,5 @@ RUN go build -o main .
 EXPOSE 4000
 
 
-CMD ["IOE-electricity-cost", "user", "password", "ioe"]
+CMD ["IOE-electricity-cost", "user", "password", "ioe","3307"]
 

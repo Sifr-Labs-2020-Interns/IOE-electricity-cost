@@ -8,8 +8,8 @@ import (
 )
 
 // ConnectToDB is a function used to connect to a mysql database.
-func ConnectToDB(username string, password string, database string) *sql.DB {
-	db, err := sql.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+database)
+func ConnectToDB(username string, password string, database string, port_no string) *sql.DB {
+	db, err := sql.Open("mysql", username+":"+password+"@tcp(localhost:"+port_no+")/"+database)
 	if err != nil {
 		db.Close()
 		db = nil

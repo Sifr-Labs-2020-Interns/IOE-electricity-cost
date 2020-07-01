@@ -73,9 +73,10 @@ func main() {
 	db_username := argsWithoutProg[0]
 	db_password := argsWithoutProg[1]
 	db := argsWithoutProg[2]
+        port_no := argsWithoutProg[3]
 
 	// database connection
-	conn = connection.ConnectToDB(db_username, db_password, db)
+	conn = connection.ConnectToDB(db_username, db_password, db, port_no)
 
 	if conn == nil {
 		panic("Database Connection Failed")
