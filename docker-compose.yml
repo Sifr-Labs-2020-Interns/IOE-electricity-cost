@@ -1,0 +1,58 @@
+##################
+#### IMPORTANT
+#### Use a terminal with the directory being the IOE-electricity-cost folder
+#### Run the following command to build images and run containers
+#### docker-compose up
+##################
+
+
+# this file uses the latest docker-compose version
+version: '3'
+
+#This file builds two docker images 
+# 'db' creates the image for the mysql database
+# 'main' creates the image for our main file
+
+# You can import the image for the main file from the following repo
+# https://hub.docker.com/repository/docker/muhammedashab/ioe_electricity_cost
+# Or you can run this compose file to create the image yourself
+
+# If you do import the image, comment the lines for the creating the 'main' image
+# Instruction are given below
+
+# When you run "docker-compose up" in the terminal, the 'db' section of the compose file
+# it creates a container of the mysql, using the official public image of mysql
+# it listens to port 3306.
+# environment defines the credentials of the database.
+
+
+
+services: 
+  db:
+    #uses the base image as the official image from docker repos
+    image: mysql:8
+    restart: always
+    #credentials for the database
+    environment: 
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - 3307:3307
+    expose:
+      - 3307
+    volumes: 
+      - ./sqlfiles:/docker-entrypoint-initdb.d
+
+  #comment from this line to the end, if you imported the image from docker hub
+  main:
+    build: ./
+    image: main:1.0
+    volumes: 
+      - ./:/go/src/IOE-electricity-cost
+    ports:
+      - 4000:4000
+    depends_on: 
+      - db
+
+  
