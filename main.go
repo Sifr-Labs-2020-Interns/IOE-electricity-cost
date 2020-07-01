@@ -11,7 +11,6 @@ import (
 	"unsafe"
 
 	"IOE-electricity-cost/connection"
-
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-macaron/binding"
@@ -37,26 +36,32 @@ const (
 
 /*----------------------------------------- Struct for Post request ------------------------------------------- */
 //Post request parameters for route add user
+
+//NewUser is a type that models a user to be added to the database
 type NewUser struct {
-	Name      string `form:"name" binding:"Required"`
-	Username  string `form: "username" binding:"Required"`
-	Password  string `form: "password" binding:"Required"`
-	Email_ID  string `form: "email_id" binding:"Required"`
-	Admin_key string `form: "admin_key" binding:"Required"`
+	Name     string `form: "name" binding:"Required"`
+	Username string `form: "username" binding:"Required"`
+	Password string `form: "password" binding:"Required"`
+	EmailID  string `form:"email_id" binding:"Required"`
+	AdminKey string `form: "admin_key" binding:"Required"`
 }
 
 //Post request parameters for route to remove user
+
+//RemoveUser is models a user to be removed from the database
 type RemoveUser struct {
-	Username  string `form: "username" binding:"Required"`
-	Email_Id  string `form: "email_id" binding:"Required"`
-	Admin_key string `form: "admin_key" binding:"Required"`
+	Username string `form: "username" binding:"Required"`
+	EmailID  string `form:"email_id" binding:"Required"`
+	AdminKey string `form: "admin_key" binding:"Required"`
 }
 
 //Post request parameters for route to Add transaction
+
+//AddTransaction models a transaction that is added to the database
 type AddTransaction struct {
-	User_key string `form: "admin_key" binding:"Required"`
-	Watts    string `form: "Watts" binding:"Required"`
-	Type     string `form: "Type" binding:"Required"`
+	UserKey string `form: "admin_key" binding:"Required"`
+	Watts   string `form: "Watts" binding:"Required"`
+	Type    string `form: "Type" binding:"Required"`
 }
 
 /*-----------------------------------------------------------------------------------------------------------------*/
@@ -73,10 +78,11 @@ func main() {
 	db_username := argsWithoutProg[0]
 	db_password := argsWithoutProg[1]
 	db := argsWithoutProg[2]
-        port_no := argsWithoutProg[3]
+  port_no := argsWithoutProg[3]
 
 	// database connection
 	conn = connection.ConnectToDB(db_username, db_password, db, port_no)
+
 
 	if conn == nil {
 		panic("Database Connection Failed")
@@ -92,7 +98,8 @@ func main() {
 	m.Post("/addtransaction", binding.Bind(AddTransaction{}), addtransaction)
 
 	m.Run()
-}
+        
+       }
 
 /*-----------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
@@ -101,6 +108,12 @@ func main() {
 /*---------------------------------------------------------------------------------------------
 ------------------------------------- HELPER FUNCTIONS ----------------------------------------
 ---------------------------------------------------------------------------------------------*/
+
+/* A function that converts a map[string]string into a JSON string */
+func convertToJSON(data map[string]string) string {
+	result, _ := json.Marshal(data)
+	return (string(result))
+}
 
 /* A function that checks if the provided admin key is valid or not.
    An admin key is valid only if it is alpha numeric (no special characters) and atleast
@@ -111,11 +124,11 @@ func main() {
 
 	NOT USED : To be used later
 */
-func isValid(key string) bool {
+func isValidKey(key string) bool {
 
-	// if len(key) < 500 {
-	// 	return false
-	// }
+	if len(key) < 500 {
+		return false
+	}
 
 	// Flags to check if the string that's read contains alphabets, letters and no special characters.
 	alphaFlag := false
@@ -142,10 +155,11 @@ func isValid(key string) bool {
 	return true
 }
 
-/* Checks if the admin key is valid or not  */
-func isValidAdmin(key string) bool {
+/* Checks if the value of a field exists in the database based on the query string */
+func isValid(value string, query string) bool {
 
-	result, err := conn.Query("select count(admin_key) as admin from admins where admin_key=?", key)
+	result, err := conn.Query(query, value)
+
 
 	if err != nil {
 		panic(err.Error())
@@ -218,14 +232,14 @@ func getRandomString(n int) string {
 ---------------------------------------------------------------------------------------------*/
 
 // TODO: add a new user
-func adduser(ctx *macaron.Context, newuser NewUser) string {
+func adduser(newuser NewUser) string {
 
 	// Get user from post request
 	name := newuser.Name
 	username := newuser.Username
 	password := newuser.Password
-	email_id := newuser.Email_ID
-	adminKey := newuser.Admin_key
+	emailID := newuser.EmailID
+	adminKey := newuser.AdminKey
 
 	//Hashing the password
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -236,9 +250,9 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 
 	password = string(bytes)
 
-	userKey := "null"                // the auto generated key
-	mResponse := map[string]string{} // the JSON response in a map[string] string
-	jResponse := []byte{}            // the JSON response as a JSON object
+
+	userKey := "null" // the auto generated key
+	result := "null"
 
 	/* Check if the admin key is valid
 	   |___ is valid
@@ -248,44 +262,46 @@ func adduser(ctx *macaron.Context, newuser NewUser) string {
 	        |___ Returns in json error admin key not valid
 
 	*/
-	if isValidAdmin(adminKey) {
+	if isValid(adminKey, "select count(admin_key) as admin from admins where admin_key=?") {
 
 		userKey = getRandomString(500)
 
-		mResponse = map[string]string{"Generated Key": userKey}
-		jResponse, _ = json.Marshal(mResponse)
+		// Checking if the user exists
+		if isValid(username, "select count(username) as users from users where username=?") {
+
+			result = convertToJSON(map[string]string{"Error": "Username " + username + " is already taken"})
+			return (string(result))
+		}
+
+		result = convertToJSON(map[string]string{"Generated Key": userKey, "Status": "Success"})
 
 		// Taken from https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html (Accessed 19/06/2020)
 		query, err := conn.Prepare("INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`USER_KEY`) VALUES(?,?,?,?,?)")
 		if err != nil {
 			panic(err.Error())
 		}
-		query.Exec(name, email_id, username, password, userKey)
+		query.Exec(name, emailID, username, password, userKey)
 
-		fmt.Println("Entered value")
 		if err != nil {
 			panic(err.Error())
 		}
 
 	} else {
-		mResponse = map[string]string{"Error": "Admin key not valid"}
-		jResponse, _ = json.Marshal(mResponse)
+		result = convertToJSON(map[string]string{"Error": "Admin key not valid"})
 	}
 
-	return string(jResponse)
+	return result
 
 }
 
 // TODO: remove user
-func removeuser(ctx *macaron.Context, removeuser RemoveUser) string {
+func removeuser(removeuser RemoveUser) string {
 
 	// Get user information from post request - UNCOMMENT WHEN USING THE VARIABLES
 	Username := removeuser.Username
-	Email_id := removeuser.Email_Id
-	Admin_key := removeuser.Admin_key
+	AdminKey := removeuser.AdminKey
 
-	mResponse := map[string]string{} // the JSON response in a map[string] string
-	jResponse := []byte{}            // the JSON response as a JSON object
+	result := "null"
 
 	/* Check if the admin key is valid
 	   |___ is valid
@@ -294,33 +310,36 @@ func removeuser(ctx *macaron.Context, removeuser RemoveUser) string {
 	        |___ Returns in json error admin key not valid
 	*/
 
-	if isValidAdmin(Admin_key) {
+	if isValid(AdminKey, "select count(admin_key) as admin from admins where admin_key=?") {
 
 		// Taken from https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html (Accessed 19/06/2020)
-		query, err := conn.Prepare("DELETE FROM users WHERE username = ? and email_id = ?")
+		query, err := conn.Prepare("DELETE FROM users WHERE username = ?")
 		if err != nil {
 			panic(err.Error())
 		}
-		query.Exec(Username, Email_id)
+		query.Exec(Username)
 
-		mResponse = map[string]string{"Status": "Successfully removed " + Username}
-		jResponse, _ = json.Marshal(mResponse)
+		result = convertToJSON(map[string]string{"Status": "Successfully removed " + Username})
+
 	} else {
-		mResponse = map[string]string{"Error": "Admin key not valid"}
-		jResponse, _ = json.Marshal(mResponse)
+		result = convertToJSON(map[string]string{"Error": "Admin key not valid"})
 	}
 
-	return string(jResponse)
+	return result
 
 }
 
 // TODO: Add transaction
-func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) {
+func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) string {
 
-	// Get information to add transaaction - UNCOMMENT WHEN USING THE VARIABLES
-	/* User_key := addtransaction.User_key
+	// Get information to add transaaction
+
+	UserKey := addtransaction.UserKey
 	Watts := addtransaction.Watts
-	Type := addtransaction.Type */
+	Type := addtransaction.Type
+
+	mResponse := map[string]string{}
+	jResponse := []byte{}
 
 	/* Check if the user key is valid
 	   |___ is valid
@@ -329,8 +348,30 @@ func addtransaction(ctx *macaron.Context, addtransaction AddTransaction) {
 	        |___ Returns in json error user key not valid
 	*/
 
-	// Remove this when you have your JSON return statementa
-	ctx.Resp.WriteHeader(200)
+	if isValid(UserKey, "select count(user_key) as users from users where user_key=?") {
+
+		query, err := conn.Prepare("INSERT INTO transactions (`USER_ID`, `WATT/SECOND`,`TYPE`) SELECT user_id,?,? FROM users WHERE user_key=?")
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// query.Exec(User_key, Watts, Type)
+
+		query.Exec(Watts, Type, UserKey)
+
+		fmt.Println("Transaction done")
+		if err != nil {
+			panic(err.Error())
+		}
+
+	} else {
+
+		mResponse = map[string]string{"Error": "User key does not exist"}
+		jResponse, _ = json.Marshal(mResponse)
+	}
+
+	return string(jResponse)
 
 }
 
