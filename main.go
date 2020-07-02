@@ -10,7 +10,8 @@ import (
 	"unicode"
 	"unsafe"
 
-	"IOE-electricity-cost/connection"
+	"github.com/Sifr-Labs-2020-Interns/IOE-electricity-cost/connection"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-macaron/binding"
@@ -78,11 +79,10 @@ func main() {
 	db_username := argsWithoutProg[0]
 	db_password := argsWithoutProg[1]
 	db := argsWithoutProg[2]
-  port_no := argsWithoutProg[3]
+	port_no := argsWithoutProg[3]
 
 	// database connection
 	conn = connection.ConnectToDB(db_username, db_password, db, port_no)
-
 
 	if conn == nil {
 		panic("Database Connection Failed")
@@ -98,8 +98,8 @@ func main() {
 	m.Post("/addtransaction", binding.Bind(AddTransaction{}), addtransaction)
 
 	m.Run()
-        
-       }
+
+}
 
 /*-----------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
@@ -159,7 +159,6 @@ func isValidKey(key string) bool {
 func isValid(value string, query string) bool {
 
 	result, err := conn.Query(query, value)
-
 
 	if err != nil {
 		panic(err.Error())
@@ -250,7 +249,6 @@ func adduser(newuser NewUser) string {
 
 	password = string(bytes)
 
-
 	userKey := "null" // the auto generated key
 	result := "null"
 
@@ -281,10 +279,6 @@ func adduser(newuser NewUser) string {
 			panic(err.Error())
 		}
 		query.Exec(name, emailID, username, password, userKey)
-
-		if err != nil {
-			panic(err.Error())
-		}
 
 	} else {
 		result = convertToJSON(map[string]string{"Error": "Admin key not valid"})
