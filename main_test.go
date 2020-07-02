@@ -3,15 +3,31 @@ package main
 import (
 	"testing"
 
-	"IOE-electricity-cost/connection"
+	"github.com/Sifr-Labs-2020-Interns/IOE-electricity-cost/connection"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func init() {
 
 	// Connecting to the test database
-	conn = connection.ConnectToDB("IOE", "IOE", "ioe")
+	conn = connection.ConnectToDB("IOE", "", "ioe", "3306")
 
+	// Adding an admin into the DB
+	query, err := conn.Prepare("INSERT INTO admins (`ADMIN_NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`, `ADMIN_KEY`) VALUES (?,?,?,?,?)")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	query.Exec("Jack Black", "jb12@gmail.com", "jbl", "jackbl", "ETU3rSTYCnqM51lsgiZMXI5Y4B4sDNxBodsnaImKBgesNcbpf09JbwnFKurCL5zObqihGyDJEJrLXZxPXjvYM1Pe1psqbh4jpHADxjSZYZ8Pey2loQDByDBzdtYyDp8skkD7c3M5tVwWGSzu05zoJxOA8scQtwbgryFhErrGHKTAvUQ3hbRgnOEaj191mP4A7swVOQKqorU8OBTrlmj6W49IPzd0Cp85ZJKtXb4H1HVzR9v39wLFzBeaRGjOQ0EKIGdy3iiKzzLZeIKzy58PjgK2UF8aDw3YaRU9TJILy4q93xNBQJA9xh59HZ3mqJGUfyEUOC15sqEimxPflwrurewHBrc0GO1AjBYwYw4fLOmzgXUXrPBjCsxpTtHkDXzIdf9FqSG4q5BqmdqsDVU5FGcllHvKmhb9Gm2U9DHRniNJ9bLwLMNX1DpIQxBrgrT1Bnzrn1o80fDOqZwSc8KjRWzQpqxxbchlEQCqH8fz12KABRSPzs0k")
+
+	// Adding a user into the DB
+	query, err = conn.Prepare("INSERT INTO users (`NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`,`USER_KEY`) VALUES(?,?,?,?,?)")
+	if err != nil {
+		panic(err.Error())
+	}
+	query.Exec("Chris George", "chrisg@gmail.com", "chrisg1", "MyNameIsChris", "ETU3rSTYCnqM51lsgiZMXI5Y4B4sDNxBodsnaImKBgesNcbpf09JbwnFKurCL5zObqihGyDJEJrLXZxPXjvYM1Pe1psqbh4jpHADxjSZYZ8Pey2loQDByDBzdtYyDp8skkD7c3M5tVwWGSzu05zoJxOA8scQtwbgryFhErrGHKTAvUQ3hbRgnOEaj191mP4A7swVOQKqorU8OBTrlmj6W49IPzd0Cp85ZJKtXb4H1HVzR9v39wLFzBeaRGjOQ0EKIGdy3iiKzzLZeIKzy58PjgK2UF8aDw3YaRU9TJILy4q93xNBQJA9xh59HZ3mqJGUfyEUOC15sqEimxPflwrurewHBrc0GO1AjBYwYw4fLOmzgXUXrPBjCsxpTtHkDXzIdf9FqSG4q5BqmdqsDVU5FGcllHvKmhb9Gm2U9DHRniNJ9bLwLMNX1DpIQxBrgrT1Bnzrn1o80fDOqZwSc8KjRWzQpqxxbchlEQCqH8fz12KABRSPzs0k")
 }
 
 func TestConvertToJSON(t *testing.T) {
@@ -91,4 +107,21 @@ func TestRemoveUser(t *testing.T) {
 	if result := isValid("hulk", "select count(username) as users from users where username=?"); result == true {
 		t.Errorf("%s is still the database", userToRemove.Username)
 	}
+}
+
+func TestCleanUp(t *testing.T) {
+	// Removing the admin and user that was added in the init function from the DB
+
+	query, err := conn.Prepare("DELETE FROM admins WHERE username = ?")
+	if err != nil {
+		panic(err.Error())
+	}
+	query.Exec("jbl")
+
+	query, err = conn.Prepare("DELETE FROM users WHERE username = ?")
+	if err != nil {
+		panic(err.Error())
+	}
+	query.Exec("chrisg1")
+
 }
