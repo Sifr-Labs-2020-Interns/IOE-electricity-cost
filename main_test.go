@@ -11,7 +11,7 @@ import (
 func init() {
 
 	// Connecting to the test database
-	conn = connection.ConnectToDB("IOE", "", "ioe", "3306")
+	conn = connection.ConnectToDB("root", "mypassword", "ioe", "172.17.0.2", "3306")
 
 	// Adding an admin into the DB
 	query, err := conn.Prepare("INSERT INTO admins (`ADMIN_NAME`,`EMAIL_ID`, `USERNAME`, `PASSWORD`, `ADMIN_KEY`) VALUES (?,?,?,?,?)")
